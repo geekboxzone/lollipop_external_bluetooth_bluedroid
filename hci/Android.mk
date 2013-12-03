@@ -14,6 +14,14 @@ LOCAL_SRC_FILES := \
 
 LOCAL_CFLAGS := -Wno-unused-parameter
 
+ifeq ($(strip $(BOARD_CONNECTIVITY_MODULE)), mt5931_6622)
+LOCAL_CFLAGS += -DMTK_MT6622
+endif
+
+ifeq ($(strip $(BOARD_CONNECTIVITY_MODULE)), mt6622)
+LOCAL_CFLAGS += -DMTK_MT6622
+endif
+
 ifeq ($(BLUETOOTH_HCI_USE_MCT),true)
 
 LOCAL_CFLAGS += -DHCI_USE_MCT

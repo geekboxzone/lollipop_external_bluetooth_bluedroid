@@ -202,6 +202,14 @@ void get_acl_data_length_cback(void *p_mem)
         if (status == 0)
             h4_cb.hc_acl_data_size = len;
 
+#ifdef MTK_MT6622
+        if (bt_hc_cbacks)
+        {
+            bt_hc_cbacks->dealloc(p_buf);
+            ALOGE("vendor lib postload completed");
+            bt_hc_cbacks->postload_cb(NULL, BT_HC_POSTLOAD_SUCCESS);
+        }
+#else
         /* reuse the rx buffer for sending HCI_LE_READ_BUFFER_SIZE command */
         p_buf->event = MSG_STACK_TO_HC_HCI_CMD;
         p_buf->offset = 0;
@@ -218,6 +226,7 @@ void get_acl_data_length_cback(void *p_mem)
             bt_hc_cbacks->dealloc(p_buf);
             bt_hc_cbacks->postload_cb(NULL, BT_HC_POSTLOAD_SUCCESS);
         }
+#endif
     }
     else if (opcode == HCI_LE_READ_BUFFER_SIZE)
     {
@@ -295,6 +304,35 @@ uint8_t internal_event_intercept(void)
     else if (event_code == HCI_COMMAND_STATUS_EVT)
     {
         num_hci_cmd_pkts = *(++p);
+
+#ifdef MTK_MT6622
+        if (p_cb->int_cmd_rsp_pending > 0)
+        {
+            p++;
+            STREAM_TO_UINT16(opcode, p)
+
+            if (opcode == p_cb->int_cmd[p_cb->int_cmd_rd_idx].opcode)
+            {
+                HCIDBG( \
+                "Intercept CommandStatusEvent for internal command (0x%04X)",\
+                          opcode);
+                if (p_cb->int_cmd[p_cb->int_cmd_rd_idx].cback != NULL)
+                {
+                    p_cb->int_cmd[p_cb->int_cmd_rd_idx].cback(p_cb->p_rcv_msg);
+                }
+                else
+                {
+                    // Missing cback function!
+                    // Release the p_rcv_msg buffer.
+                    if (bt_hc_cbacks)
+                    {
+                        bt_hc_cbacks->dealloc(p_cb->p_rcv_msg);
+                    }
+                }
+                return TRUE;
+            }
+        }
+#endif
     }
 
     return FALSE;
@@ -976,7 +1014,19 @@ uint16_t hci_h4_receive_msg(void)
 uint8_t hci_h4_send_int_cmd(uint16_t opcode, HC_BT_HDR *p_buf, \
                                   tINT_CMD_CBACK p_cback)
 {
+#ifdef MTK_MT6622
+    uint16_t event = p_buf->event & MSG_EVT_MASK;
+    uint8_t *p = ((uint8_t *)(p_buf + 1));
+    uint16_t bytes_to_send;
+    uint16_t bytes_sent;
+    uint8_t magic = 0xFF;
+#endif
+
+#ifdef MTK_MT6622
+    if (h4_cb.int_cmd_rsp_pending >= INT_CMD_PKT_MAX_COUNT)
+#else
     if (h4_cb.int_cmd_rsp_pending > INT_CMD_PKT_MAX_COUNT)
+#endif
     {
         ALOGE( \
         "Allow only %d outstanding internal commands at a time [Reject 0x%04X]"\
@@ -984,6 +1034,70 @@ uint8_t hci_h4_send_int_cmd(uint16_t opcode, HC_BT_HDR *p_buf, \
         return FALSE;
     }
 
+#ifdef MTK_MT6622
+    /* Check if sending command is chip wake up command */
+    if (opcode == 0xFCC0)
+    {
+        /* Prepend 0xFCC0 to the pending internal commands if any */
+        if (h4_cb.int_cmd_rsp_pending > 0){
+            if (h4_cb.int_cmd_wrt_idx < h4_cb.int_cmd_rsp_pending){
+                h4_cb.int_cmd_wrt_idx += INT_CMD_PKT_MAX_COUNT;
+            }
+            h4_cb.int_cmd_wrt_idx = (h4_cb.int_cmd_wrt_idx-h4_cb.int_cmd_rsp_pending);
+            /* now write idx equals to read idx */
+            if (h4_cb.int_cmd_wrt_idx < 1){
+                h4_cb.int_cmd_wrt_idx += INT_CMD_PKT_MAX_COUNT;
+                h4_cb.int_cmd_rd_idx += INT_CMD_PKT_MAX_COUNT;
+            }
+            h4_cb.int_cmd_wrt_idx = (h4_cb.int_cmd_wrt_idx-1);
+            h4_cb.int_cmd_rd_idx = (h4_cb.int_cmd_rd_idx-1);
+        }
+
+        h4_cb.int_cmd_rsp_pending++;
+        h4_cb.int_cmd[h4_cb.int_cmd_wrt_idx].opcode = opcode;
+        h4_cb.int_cmd[h4_cb.int_cmd_wrt_idx].cback = p_cback;
+
+        h4_cb.int_cmd_wrt_idx = ((h4_cb.int_cmd_wrt_idx+h4_cb.int_cmd_rsp_pending) \
+                                 & INT_CMD_PKT_IDX_MASK);
+
+        /* Send MTK wake up magic number 0xFF to instead */
+        bytes_sent = userial_write(event, &magic, 1);
+
+        num_hci_cmd_pkts--;
+        btsnoop_capture(p_buf, FALSE);
+        if (bt_hc_cbacks)
+        {
+            /* dealloc buffer of wake up command */
+            bt_hc_cbacks->dealloc(p_buf);
+        }
+    }
+    /* Check if sending command is host awake command */
+    else if (opcode == 0xFCC1)
+    {
+        h4_cb.int_cmd_rsp_pending++;
+        h4_cb.int_cmd[h4_cb.int_cmd_wrt_idx].opcode = opcode;
+        h4_cb.int_cmd[h4_cb.int_cmd_wrt_idx].cback = p_cback;
+        h4_cb.int_cmd_wrt_idx = ((h4_cb.int_cmd_wrt_idx+1) & INT_CMD_PKT_IDX_MASK);
+
+        /* Put the HCI Transport packet type 1 byte before the message */
+        p = p - 1;
+        *p = H4_TYPE_COMMAND;
+        bytes_to_send = p_buf->len + 1;     /* message_size + message type */
+
+        /* Send host awake command directly */
+        bytes_sent = userial_write(event, (uint8_t *) p, bytes_to_send);
+
+        num_hci_cmd_pkts--;
+        btsnoop_capture(p_buf, FALSE);
+        if (bt_hc_cbacks)
+        {
+            /* dealloc buffer of host awake command */
+            bt_hc_cbacks->dealloc(p_buf);
+        }
+    }
+    else
+    {
+#endif
     h4_cb.int_cmd_rsp_pending++;
     h4_cb.int_cmd[h4_cb.int_cmd_wrt_idx].opcode = opcode;
     h4_cb.int_cmd[h4_cb.int_cmd_wrt_idx].cback = p_cback;
@@ -993,6 +1107,10 @@ uint8_t hci_h4_send_int_cmd(uint16_t opcode, HC_BT_HDR *p_buf, \
     p_buf->layer_specific = opcode;
 
     bthc_tx(p_buf);
+#ifdef MTK_MT6622
+    }
+#endif
+
     return TRUE;
 }
 
