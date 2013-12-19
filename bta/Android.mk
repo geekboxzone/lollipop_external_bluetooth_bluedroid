@@ -8,6 +8,10 @@ LOCAL_CFLAGS += \
 endif
 LOCAL_CFLAGS += -DBUILDCFG $(bdroid_CFLAGS) -std=c99
 
+ifeq ($(strip $(BOARD_CONNECTIVITY_MODULE)), esp8089_bk3515)
+    LOCAL_CFLAGS += -DBT_BK3515A
+endif
+
 LOCAL_PRELINK_MODULE:=false
 LOCAL_SRC_FILES:= \
     ./dm/bta_dm_ci.c \

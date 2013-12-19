@@ -151,6 +151,9 @@ typedef struct
 /******************************************************************************
 **  Externs
 ******************************************************************************/
+#ifdef BT_BK3515A
+uint16_t last_opcode = 0x0000;
+#endif
 
 uint8_t hci_h4_send_int_cmd(uint16_t opcode, HC_BT_HDR *p_buf, \
                                   tINT_CMD_CBACK p_cback);
@@ -185,6 +188,13 @@ static tHCI_H4_CB       h4_cb;
 ** Returns          None
 **
 *******************************************************************************/
+#ifdef BT_BK3515A
+unsigned char set_emergency_poll_interver_cmd[6] =
+{
+    0x01, 0x69, 0xFC, 0x02, 0x14, 0x00
+};
+#endif
+
 void get_acl_data_length_cback(void *p_mem)
 {
     uint8_t     *p, status;
@@ -201,6 +211,11 @@ void get_acl_data_length_cback(void *p_mem)
     {
         if (status == 0)
             h4_cb.hc_acl_data_size = len;
+
+#ifdef BT_BK3515A
+        ret = userial_write(0xfc69, set_emergency_poll_interver_cmd,6);
+        return;  /*Robin added for bk3515 without BLE*/
+#endif
 
 #ifdef MTK_MT6622
         if (bt_hc_cbacks)
@@ -723,7 +738,18 @@ void hci_h4_send_msg(HC_BT_HDR *p_msg)
     *p = type;
     bytes_to_send = p_msg->len + 1;     /* message_size + message type */
 
+#ifdef BT_BK3515A
+    if (last_opcode == 0x0C03 || last_opcode == 0xFC1A)
+    {
+        usleep(10000);   /*delay 10ms until bt chip finish the reset opration*/ 
+    }
     bytes_sent = userial_write(event,(uint8_t *) p, bytes_to_send);
+    p += 1;
+    STREAM_TO_UINT16(last_opcode,p);
+    p-=3;
+#else
+    bytes_sent = userial_write(event,(uint8_t *) p, bytes_to_send);
+#endif
 
     p_msg->layer_specific = lay_spec;
 
