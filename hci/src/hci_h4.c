@@ -1048,6 +1048,17 @@ uint8_t hci_h4_send_int_cmd(uint16_t opcode, HC_BT_HDR *p_buf, \
     uint8_t magic = 0xFF;
 #endif
 
+#ifdef RDA587X_BLUETOOTH  
+    if(0xC0FC == opcode)
+    {	
+        uint8_t wake_up[] = {0xFF};//{0x01,0xC0,0xFC,0x00};
+	     userial_write(opcode,wake_up,sizeof(wake_up));
+	     usleep(30000);
+	  		
+        return TRUE;
+    }
+#endif
+
 #ifdef MTK_MT6622
     if (h4_cb.int_cmd_rsp_pending >= INT_CMD_PKT_MAX_COUNT)
 #else
