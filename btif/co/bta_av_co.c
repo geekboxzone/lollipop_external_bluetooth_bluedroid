@@ -62,7 +62,7 @@
 #define BTA_AV_CO_SBC_MIN_BITPOOL_OFF  5
 #define BTA_AV_CO_SBC_MAX_BITPOOL_OFF  6
 
-#define BTA_AV_CO_SBC_MAX_BITPOOL  53
+#define BTA_AV_CO_SBC_MAX_BITPOOL  32
 
 /* SCMS-T protect info */
 const UINT8 bta_av_co_cp_scmst[BTA_AV_CP_INFO_LEN] = "\x02\x02\x00";
