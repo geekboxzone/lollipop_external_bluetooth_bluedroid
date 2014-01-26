@@ -56,6 +56,10 @@
 #define HCI_LOGGING_FILENAME  "/data/misc/bluedroid/btsnoop_hci.log"
 #endif
 
+#ifdef RDA587X_BLUETOOTH
+#define PRELOAD_START_TIMEOUT_MS 10000  // 10 seconds
+#endif
+
 /* Stack preload process timeout period  */
 #ifndef PRELOAD_START_TIMEOUT_MS
 #define PRELOAD_START_TIMEOUT_MS 3000  // 3 seconds

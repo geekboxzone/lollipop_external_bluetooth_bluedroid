@@ -115,6 +115,9 @@ endif
 ifeq ($(TARGET_PRODUCT), full_maguro)
 	LOCAL_CFLAGS += -DTARGET_MAGURO
 endif
+ifeq ($(strip $(BOARD_CONNECTIVITY_MODULE)),rtl81xx_rda587x)
+	LOCAL_CFLAGS += -DRDA587X_BLUETOOTH
+endif
 
 LOCAL_SHARED_LIBRARIES := \
 	libcutils \
