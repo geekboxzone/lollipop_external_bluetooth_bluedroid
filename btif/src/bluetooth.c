@@ -162,6 +162,27 @@ static int disable(void)
     return btif_disable_bluetooth();
 }
 
+
+static int enable_radio( void )
+{
+    ALOGI("enable");
+
+    /* sanity check */
+    if (interface_ready() == FALSE)
+        return BT_STATUS_NOT_READY;
+
+    return BT_STATUS_NOT_READY;
+}
+
+static int disable_radio(void)
+{
+    /* sanity check */
+    if (interface_ready() == FALSE)
+        return BT_STATUS_NOT_READY;
+
+    return BT_STATUS_NOT_READY;
+}
+
 static void cleanup( void )
 {
     /* sanity check */
@@ -379,6 +400,13 @@ static const void* get_profile_interface (const char *profile_id)
     return NULL;
 }
 
+static const void* get_fm_interface ()
+{
+    ALOGI("get_fm_interface " );
+
+    return NULL;
+}
+
 int dut_mode_configure(uint8_t enable)
 {
     ALOGI("dut_mode_configure");
@@ -435,6 +463,8 @@ static const bt_interface_t bluetoothInterface = {
     init,
     enable,
     disable,
+    enable_radio,
+    disable_radio,
     cleanup,
     get_adapter_properties,
     get_adapter_property,
@@ -463,6 +493,7 @@ static const bt_interface_t bluetoothInterface = {
     config_hci_snoop_log,
     set_os_callouts,
     read_energy_info,
+    get_fm_interface
 };
 
 const bt_interface_t* bluetooth__get_bluetooth_interface ()
