@@ -1053,7 +1053,7 @@ uint8_t hci_h4_send_int_cmd(uint16_t opcode, HC_BT_HDR *p_buf, \
     {	
         uint8_t wake_up[] = {0xFF};//{0x01,0xC0,0xFC,0x00};
 	     userial_write(opcode,wake_up,sizeof(wake_up));
-	     usleep(30000);
+	     usleep(20000);
 	  		
         return TRUE;
     }
