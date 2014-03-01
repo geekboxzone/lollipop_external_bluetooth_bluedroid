@@ -340,6 +340,9 @@ static int init(const bt_hc_callbacks_t* p_cb, unsigned char *local_bdaddr)
 #ifdef HCI_USE_MCT
     extern tHCI_IF hci_mct_func_table;
     p_hci_if = &hci_mct_func_table;
+#elif defined HCI_USE_RTK_H5
+    extern tHCI_IF hci_h5_func_table;
+    p_hci_if = &hci_h5_func_table;
 #else
     extern tHCI_IF hci_h4_func_table;
     p_hci_if = &hci_h4_func_table;
