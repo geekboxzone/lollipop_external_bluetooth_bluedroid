@@ -375,7 +375,7 @@ static void btif_fetch_local_bdaddr(bt_bdaddr_t *local_addr)
         if (vflash_fd > 0)
         {
             char bd_addr[6] = {0};
-            BTIF_TRACE_DEBUG0("Get local bdaddr from vflash");
+            BTIF_TRACE_DEBUG("Get local bdaddr from vflash");
             #define VFLASH_READ_BDA  0x01
             if(ioctl(vflash_fd, VFLASH_READ_BDA, (unsigned long)bd_addr) >= 0
                 && memcmp(bd_addr, null_bdaddr, BD_ADDR_LEN) != 0)
@@ -389,7 +389,7 @@ static void btif_fetch_local_bdaddr(bt_bdaddr_t *local_addr)
 
                 local_addr->address[0] = local_addr->address[0] << 1;
                 valid_bda = TRUE;
-                BTIF_TRACE_DEBUG6("Got Factory BDA %02X:%02X:%02X:%02X:%02X:%02X",
+                BTIF_TRACE_DEBUG("Got Factory BDA %02X:%02X:%02X:%02X:%02X:%02X",
                     local_addr->address[0], local_addr->address[1], local_addr->address[2],
                     local_addr->address[3], local_addr->address[4], local_addr->address[5]);
             }
