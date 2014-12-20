@@ -521,7 +521,10 @@ const uint8_t byte_rev_table[256] = {
 
 #define LOGI0(t,s) __android_log_write(ANDROID_LOG_INFO, t, s)
 
-void
+#undef LogMsg
+#define LogMsg(x...)
+
+/*void
 LogMsg(const char *fmt_str, ...)
 {
     static char buffer[H5_LOG_BUF_SIZE];
@@ -538,7 +541,7 @@ LogMsg(const char *fmt_str, ...)
      {
      	  return;   
      }
-}
+}*/
 
 /* Copy, swap, convert BD Address */
 static inline int bacmp(bdaddr_t *ba1, bdaddr_t *ba2)
@@ -1928,8 +1931,7 @@ uint8_t internal_event_intercept_h5(void)
                         // Release the p_rcv_msg buffer.
                         if (bt_hc_cbacks)
                         {
-                            bt_hc_cbacks->dealloc((TRANSAC) p_cb->p_rcv_msg, \
-                                                  (char *) (p_cb->p_rcv_msg + 1));
+                            bt_hc_cbacks->dealloc((TRANSAC) p_cb->p_rcv_msg);
                         }
                     }
                 }
@@ -2235,7 +2237,7 @@ uint8_t hci_rx_dispatch_by_handle(sk_buff* rx_skb)
             p_rcv_msg->len = rx_skb_data_len;
             memcpy((uint8_t *)(p_rcv_msg + 1), rx_skb_data, rx_skb_data_len);
             btsnoop_capture(p_rcv_msg, TRUE);
-            bt_hc_cbacks->dealloc((TRANSAC) p_rcv_msg, (char *) (p_rcv_msg + 1));
+            bt_hc_cbacks->dealloc((TRANSAC) p_rcv_msg);
         }
     }
     //end print snoop log    
@@ -2683,7 +2685,7 @@ void get_acl_data_length_cback_h5(void *p_mem)
         if ((status = hci_h5_send_int_cmd(HCI_LE_READ_BUFFER_SIZE, p_buf, \
                                            get_acl_data_length_cback_h5)) == FALSE)
         {
-            bt_hc_cbacks->dealloc((TRANSAC) p_buf, (char *) (p_buf + 1));
+            bt_hc_cbacks->dealloc((TRANSAC) p_buf);
             bt_hc_cbacks->postload_cb(NULL, BT_HC_POSTLOAD_SUCCESS);
         }
     }
@@ -2701,7 +2703,7 @@ void get_acl_data_length_cback_h5(void *p_mem)
 
         if (bt_hc_cbacks)
         {
-            bt_hc_cbacks->dealloc((TRANSAC) p_buf, (char *) (p_buf + 1));
+            bt_hc_cbacks->dealloc((TRANSAC) p_buf);
             ALOGE("vendor lib postload completed");
             bt_hc_cbacks->postload_cb(NULL, BT_HC_POSTLOAD_SUCCESS);
         }
@@ -2889,7 +2891,7 @@ void hci_h5_init(void)
     rtk_h5.bHasUpdateCalInquiryState = FALSE;
 #endif
 
-    btsnoop_init();
+    //btsnoop_init();
 }
 
 /*******************************************************************************
@@ -2910,7 +2912,7 @@ void hci_h5_cleanup(void)
     rtk_h5.cleanuping = 1;
 	
     btsnoop_close();
-    btsnoop_cleanup();
+    //btsnoop_cleanup();
 
     h5_free_data_retrans_timer();
     h5_free_sync_retrans_timer();
@@ -3159,7 +3161,7 @@ void hci_h5_send_msg(HC_BT_HDR *p_msg)
             (p_msg->layer_specific == lay_spec))
         {
             /* dealloc buffer of internal command */
-            bt_hc_cbacks->dealloc((TRANSAC) p_msg, (char *) (p_msg + 1));
+            bt_hc_cbacks->dealloc((TRANSAC) p_msg);
         }
         else
         {
@@ -3307,7 +3309,7 @@ void hci_h5_get_acl_data_length(void)
         if ((ret = hci_h5_send_int_cmd(HCI_READ_BUFFER_SIZE, p_buf, \
                                        get_acl_data_length_cback_h5)) == FALSE)
         {
-            bt_hc_cbacks->dealloc((TRANSAC) p_buf, (char *) (p_buf + 1));
+            bt_hc_cbacks->dealloc((TRANSAC) p_buf);
         }
         else
             return;
@@ -3450,8 +3452,7 @@ static void h5_timeout_handler(int signo, siginfo_t * info, void *context)
             // Release the p_rcv_msg buffer.
             if (bt_hc_cbacks)
             {
-                bt_hc_cbacks->dealloc((TRANSAC) rtk_h5.p_rcv_msg, \
-                                      (char *) (rtk_h5.p_rcv_msg + 1));
+                bt_hc_cbacks->dealloc((TRANSAC) rtk_h5.p_rcv_msg);
             }
         }
     }
