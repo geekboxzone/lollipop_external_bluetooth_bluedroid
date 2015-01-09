@@ -387,7 +387,7 @@ static void btif_fetch_local_bdaddr(bt_bdaddr_t *local_addr)
                 local_addr->address[4] = bd_addr[1];
                 local_addr->address[5] = bd_addr[0];
 
-                local_addr->address[0] = local_addr->address[0] << 1;
+                local_addr->address[0] = local_addr->address[0] & 0xFE; // avoid multicast address
                 valid_bda = TRUE;
                 BTIF_TRACE_DEBUG("Got Factory BDA %02X:%02X:%02X:%02X:%02X:%02X",
                     local_addr->address[0], local_addr->address[1], local_addr->address[2],
