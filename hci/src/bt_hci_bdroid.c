@@ -316,6 +316,7 @@ static void epilog_wait_timer(void)
 static int init(const bt_hc_callbacks_t* p_cb, unsigned char *local_bdaddr)
 {
     int result;
+    char type[64];
 
     ALOGI("init");
 
@@ -340,12 +341,19 @@ static int init(const bt_hc_callbacks_t* p_cb, unsigned char *local_bdaddr)
 #ifdef HCI_USE_MCT
     extern tHCI_IF hci_mct_func_table;
     p_hci_if = &hci_mct_func_table;
-#elif defined HCI_USE_RTK_H5
-    extern tHCI_IF hci_h5_func_table;
-    p_hci_if = &hci_h5_func_table;
-#else
-    extern tHCI_IF hci_h4_func_table;
-    p_hci_if = &hci_h4_func_table;
+#else//if defined HCI_USE_RTK_H5
+    extern int check_wifi_chip_type_string(char *type);
+	check_wifi_chip_type_string(type);
+	if (!strncmp(type, "RTL8723BS", 9)) {
+	    extern tHCI_IF hci_h5_func_table;
+	    p_hci_if = &hci_h5_func_table;
+	    ALOGD("%s, use hci h5", __func__);
+	}
+	else {
+	    extern tHCI_IF hci_h4_func_table;
+	    p_hci_if = &hci_h4_func_table;
+	    ALOGD("%s, use hci h4", __func__);
+	}    
 #endif
 
     p_hci_if->init();

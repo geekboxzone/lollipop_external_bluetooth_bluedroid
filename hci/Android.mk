@@ -39,7 +39,7 @@ LOCAL_SRC_FILES += \
 	src/userial_mct.c
 
 else
-ifeq ($(BLUETOOTH_HCI_USE_RTK_H5),true)
+#ifeq ($(BLUETOOTH_HCI_USE_RTK_H5),true)    
 
 LOCAL_CFLAGS := -DHCI_USE_RTK_H5
 
@@ -49,11 +49,12 @@ LOCAL_SRC_FILES += \
 	src/bt_skbuff.c \
 	src/bt_list.c
 
-else
+#else
 LOCAL_SRC_FILES += \
-	src/hci_h4.c \
-	src/userial.c
-endif
+        src/hci_h4.c
+#        src/userial.c
+
+#endif
 endif
 
 LOCAL_CFLAGS += -std=c99

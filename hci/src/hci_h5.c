@@ -418,7 +418,8 @@ static pthread_mutex_t h5_wakeup_mutex = PTHREAD_MUTEX_INITIALIZER;
 ******************************************************************************/
 
 /* Num of allowed outstanding HCI CMD packets */
-volatile int num_hci_cmd_pkts = 1;
+//volatile int num_hci_cmd_pkts = 1;
+extern int num_hci_cmd_pkts;
 
 /******************************************************************************
 **  Static variables

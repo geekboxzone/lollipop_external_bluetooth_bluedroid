@@ -123,7 +123,8 @@ LOCAL_SHARED_LIBRARIES := \
 	libcutils \
 	libdl \
 	liblog \
-	libpower
+	libpower \
+        libhardware_legacy
 
 LOCAL_STATIC_LIBRARIES := \
 	libbt-brcm_bta \

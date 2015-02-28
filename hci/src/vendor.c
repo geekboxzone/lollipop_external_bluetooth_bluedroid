@@ -60,17 +60,29 @@ static const bt_vendor_callbacks_t vendor_callbacks = {
 };
 
 bool vendor_open(const uint8_t *local_bdaddr) {
+  char type[64], vendor_so[64];
   assert(lib_handle == NULL);
 
-  lib_handle = dlopen(VENDOR_LIBRARY_NAME, RTLD_NOW);
+    extern int check_wifi_chip_type_string(char *type);
+    check_wifi_chip_type_string(type);
+    if (!strncmp(type, "RTL8723BS", 9)) {
+        strcpy(vendor_so, "libbt-vendor-rtl8723bs.so");
+    } else if (!strcmp(type, "RTL8723BU")) {
+        strcpy(vendor_so, "libbt-vendor-rtl8723bu.so");
+    } else {
+        strcpy(vendor_so, VENDOR_LIBRARY_NAME);
+    }
+    ALOGD("%s load %s", __func__, vendor_so);
+
+  lib_handle = dlopen(vendor_so, RTLD_NOW);
   if (!lib_handle) {
-    ALOGE("%s unable to open %s: %s", __func__, VENDOR_LIBRARY_NAME, dlerror());
+    ALOGE("%s unable to open %s: %s", __func__, vendor_so, dlerror());
     goto error;
   }
 
   vendor_interface = (bt_vendor_interface_t *)dlsym(lib_handle, VENDOR_LIBRARY_SYMBOL_NAME);
   if (!vendor_interface) {
-    ALOGE("%s unable to find symbol %s in %s: %s", __func__, VENDOR_LIBRARY_SYMBOL_NAME, VENDOR_LIBRARY_NAME, dlerror());
+    ALOGE("%s unable to find symbol %s in %s: %s", __func__, VENDOR_LIBRARY_SYMBOL_NAME, vendor_so, dlerror());
     goto error;
   }
 
